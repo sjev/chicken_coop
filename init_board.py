@@ -49,4 +49,7 @@ if __name__ == '__main__':
     files = [str(f) for f in  path.glob('*.py')]
     upload(files)
     
+    # add libraries
+    print('Please manually copy umqtt. Or use upip if it works')
+    
     

@@ -1,6 +1,7 @@
 from machine import Pin
 import time
-
+import config
+from umqtt.simple import MQTTClient
 
 class Board:
     
@@ -34,14 +35,37 @@ class Board:
         self.off('d1')
         self.off('d2')
 
+def mqttCallback(topic,msg):
+    print('Topic: %s Message:%s' % (topic,msg))
 
-print('Running main.py')
+def mainLoop(client,board):
+    
+    counter = 0
 
+    while True:
+        board.toggle('led')
+        counter +=  1
+        client.publish('coop/status','ping %i' % counter)
+        client.check_msg()
+        
+        time.sleep(1)
+        
 
+if __name__ == '__main__':
+    print('Running main.py')
 
-board = Board()
+    board = Board()
+    
+    client = MQTTClient('chickenMaster', config.broker)
+    client.set_callback(mqttCallback)
+    
+    client.connect()
+    
+    client.subscribe('coop/cmd')
 
-while True:
-    board.toggle('led')
-    time.sleep(1)
-
+    try:
+        mainLoop(client,board)
+    finally:
+        client.disconnect()
+        
+    
