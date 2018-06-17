@@ -2,6 +2,7 @@ from machine import Pin
 import time
 import config
 from umqtt.simple import MQTTClient
+import ntptime
 
 class Board:
     
@@ -53,6 +54,10 @@ def mainLoop(client,board):
 
 if __name__ == '__main__':
     print('Running main.py')
+    
+    
+    # set board time
+    ntptime.settime()
 
     board = Board()
     
