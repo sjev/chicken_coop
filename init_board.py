@@ -34,9 +34,21 @@ def upload(files):
 def deleteFiles(files):
     
     for f in files:
-        runCmd('rm '+f)
+        try:
+            runCmd('rm '+f)
+        except:
+            print('Could not remove ',f)
  
 if __name__ == '__main__':
+    
+    
+    # delete lib
+    try: 
+        runCmd('rmdir /lib')
+    except:
+        print('Could not remove lib')
+    
+    
     
     # delete files 
     l = listFiles()
@@ -50,6 +62,6 @@ if __name__ == '__main__':
     upload(files)
     
     # add libraries
-    print('Please manually copy umqtt. Or use upip if it works')
+    runCmd('put src/lib /lib')
     
     
