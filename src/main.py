@@ -39,14 +39,20 @@ class Board:
 def mqttCallback(topic,msg):
     print('Topic: %s Message:%s' % (topic,msg))
 
+    global client
+
+    if topic == b'coop/door/cmd': # received command
+        client.publish(b'coop/door/action',msg) # echo command
+
 def mainLoop(client,board):
     
     counter = 0
+    client.publish('coop/status','online')
 
     while True:
         board.toggle('led')
         counter +=  1
-        client.publish('coop/status','ping %i' % counter)
+        
         client.check_msg()
         
         time.sleep(1)
@@ -66,7 +72,7 @@ if __name__ == '__main__':
     
     client.connect()
     
-    client.subscribe('coop/cmd')
+    client.subscribe('coop/door/cmd')
 
     try:
         mainLoop(client,board)
