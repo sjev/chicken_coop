@@ -19,6 +19,7 @@ def connectWifi(networks=config.networks):
         for essid,password in networks:
             print('connecting to ',essid)
             sta_if.active(True)
+            
             sta_if.connect(essid, password)
             for retry in range(5):
                 if sta_if.isconnected():
@@ -30,6 +31,11 @@ def connectWifi(networks=config.networks):
                     break
     
     if sta_if.isconnected(): # should be connected now
+        
+        # change to predefined ip address
+        sta_if.ifconfig(config.netconfig)
+        sta_if.connect()
+        
         print('network config:', sta_if.ifconfig())
     else: # warn with led and reboot
         print('Connection failed!')

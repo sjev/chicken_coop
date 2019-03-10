@@ -43,6 +43,17 @@ def mqttCallback(topic,msg):
 
     if topic == b'coop/door/cmd': # received command
         client.publish(b'coop/door/action',msg) # echo command
+        
+        
+def printInfo():
+    """ print diagnostic info to serial """
+    from network import WLAN
+    wifi = WLAN()
+    
+      
+    
+    print('ifconfig :', wifi.ifconfig())
+    print('rssi: ',wifi.status('rssi'))
 
 def mainLoop(client,board):
     
@@ -56,7 +67,7 @@ def mainLoop(client,board):
         client.check_msg()
         
         time.sleep(1)
-        
+        printInfo()
 
 if __name__ == '__main__':
     print('Running main.py')
