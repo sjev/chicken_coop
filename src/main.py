@@ -41,11 +41,14 @@ class Board:
 def mqttCallback(topic,msg):
     print('Topic: %s Message:%s' % (topic,msg))
 
-    global client
+    global client, board
 
     if topic == b'cmnd/coop/DOOR': # received command
         client.publish(b'stat/coop/DOOR',msg) # echo command
-
+        if msg == b'ON':
+            board.motorUp()
+        elif msg == b'OFF':
+            board.motorOff()
 
 
 
