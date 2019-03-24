@@ -10,12 +10,15 @@ class Board:
 
     # name - gpio pairs
     outputs = [('led',2),('d1',5),('d2',4)]
+    inputs = [('d0',16),('d5',14)]
 
     def __init__(self):
 
         self.pins = {}
         for name,gpio in self.outputs:
             self.pins[name] = Pin(gpio, Pin.OUT)
+        for name,gpio in self.inputs:
+            self.pins[name] = Pin(gpio, Pin.IN)
 
     def off(self,pinName):
         self.pins[pinName].value(0)
@@ -37,6 +40,26 @@ class Board:
     def motorOff(self):
         self.off('d1')
         self.off('d2')
+
+    @property
+    def doorState(self):
+        """ get door state
+        d0 - upper switch
+        d1 - lower switch
+
+        """
+        top = self.pins['d0'].value()
+        bottom = self.pins['d5'].value()
+
+        if top==1 and bottom==0:
+            return 'open'
+        elif top==0 and bottom==1:
+            return 'closed'
+        else:
+            return 'undefined'
+
+
+
 
 def mqttCallback(topic,msg):
     print('Topic: %s Message:%s' % (topic,msg))
@@ -80,7 +103,8 @@ def mainLoop(client,board):
             client.ping()
 
         counter += 1
-        print(counter)
+        print(counter,' s0:',board.pins['d0'].value(), ' s1:',board.pins['d5'].value())
+        print(board.doorState)
         #printInfo()
 
 if __name__ == '__main__':
