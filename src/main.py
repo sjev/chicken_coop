@@ -6,6 +6,22 @@ import ntptime
 
 KEEP_ALVIVE = 20 # ping every such seconds
 
+class Timer:
+
+    def __init__(self,t=None):
+        self.start = time.time()
+        self._timeout = t
+
+    def elapsed(self):
+        return time.time()-self.start
+
+    @property
+    def timeout(self):
+        if self._timeout is None:
+            return False
+        else:
+            return self.elapsed()>self._timeout
+
 class Board:
 
     # name - gpio pairs
@@ -58,6 +74,27 @@ class Board:
         else:
             return 'undefined'
 
+    def openDoor(self):
+
+        if self.doorState == 'closed':
+            print('Opening door')
+            tim = Timer(5)
+            self.motorUp()
+            while (not tim.timeout) and (not self.doorState == "open"):
+                time.sleep(0.2)
+
+            self.motorOff()
+
+    def closeDoor(self):
+
+        if self.doorState == 'open':
+            print('Closing door')
+            tim = Timer(5)
+            self.motorDown()
+            while (not tim.timeout) and (not self.doorState == "closed"):
+                time.sleep(0.2)
+
+            self.motorOff()
 
 
 
@@ -69,9 +106,9 @@ def mqttCallback(topic,msg):
     if topic == b'cmnd/coop/DOOR': # received command
         client.publish(b'stat/coop/DOOR',msg) # echo command
         if msg == b'ON':
-            board.motorUp()
+            board.openDoor()
         elif msg == b'OFF':
-            board.motorOff()
+            board.closeDoor()
 
 
 
