@@ -6,8 +6,13 @@ import ntptime
 
 KEEP_ALVIVE = 20 # ping every such seconds
 
-class Timer:
+topics = {'doorCmd':b'coop/door/switch/cmd',
+          'doorSwitchState':b'coop/door/switch/state',
+          'tele':b'coop/lwt',
+          'doorSensor':b'coop/door/sensor/state'}
 
+class Timer:
+    """ simple timekeeper class"""
     def __init__(self,t=None):
         self.start = time.time()
         self._timeout = t
@@ -20,7 +25,10 @@ class Timer:
         if self._timeout is None:
             return False
         else:
-            return self.elapsed()>self._timeout
+            return self.elapsed() > self._timeout
+
+    def reset(self):
+        self.start = time.time()
 
 class Board:
 
@@ -101,10 +109,10 @@ class Board:
 def mqttCallback(topic,msg):
     print('Topic: %s Message:%s' % (topic,msg))
 
-    global client, board
 
-    if topic == b'cmnd/coop/DOOR': # received command
-        client.publish(b'stat/coop/DOOR',msg) # echo command
+
+    if topic == topics['doorCmd']: # received command
+        client.publish(topics['doorSwitchState'],msg) # echo command
         if msg == b'ON':
             board.openDoor()
         elif msg == b'OFF':
@@ -122,8 +130,9 @@ def printInfo():
 
 def mainLoop(client,board):
 
-    counter = 0
 
+    counter = 0
+    oldState = board.doorState
 
     while True:
         board.toggle('led')
@@ -142,6 +151,12 @@ def mainLoop(client,board):
         counter += 1
         print(counter,' s0:',board.pins['d0'].value(), ' s1:',board.pins['d5'].value())
         print(board.doorState)
+
+        newState = board.doorState
+        if oldState != newState:
+            print('publishing state')
+            client.publish(topics['doorSensor'],newState)
+            oldState = newState
         #printInfo()
 
 if __name__ == '__main__':
@@ -151,15 +166,16 @@ if __name__ == '__main__':
     # set board time
     ntptime.settime()
 
+    global client, board
     board = Board()
 
     client = MQTTClient('chickenMaster', config.broker,keepalive=KEEP_ALVIVE+5)
     client.DEBUG = True
     client.set_callback(mqttCallback)
-    client.set_last_will('tele/coop/LWT','Offline')
+    client.set_last_will(topics['tele'],'Offline',retain=True)
     client.connect()
-    client.publish('tele/coop/LWT', 'Online')
-    client.subscribe('cmnd/coop/DOOR')
+    client.publish(topics['tele'], 'Online',retain=True)
+    client.subscribe(topics['doorCmd'])
 
     try:
         mainLoop(client,board)
