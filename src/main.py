@@ -3,6 +3,7 @@ import time
 import config
 from mqtt import MQTTClient
 import ntptime
+import machine
 
 KEEP_ALVIVE = 20 # ping every such seconds
 DOOR_TIMEOUT = 10
@@ -114,8 +115,6 @@ class Board:
 def mqttCallback(topic,msg):
     print('Topic: %s Message:%s' % (topic,msg))
 
-
-
     if topic == topics['doorCmd']: # received command
         client.publish(topics['doorSwitchState'],msg) # echo command
         if msg == b'ON':
@@ -164,6 +163,9 @@ def mainLoop(client,board):
             oldState = newState
         #printInfo()
 
+
+
+
 if __name__ == '__main__':
     print('Running main.py')
 
@@ -178,7 +180,14 @@ if __name__ == '__main__':
     client.DEBUG = True
     client.set_callback(mqttCallback)
     client.set_last_will(topics['tele'],'Offline',retain=True)
-    client.connect()
+
+    try:
+        client.connect()
+    except:
+        print('Could not connect MQTT. restarting')
+        time.sleep(5)
+        machine.reset()
+
     client.publish(topics['tele'], 'Online',retain=True)
     client.subscribe(topics['doorCmd'])
 
