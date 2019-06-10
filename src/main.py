@@ -5,6 +5,7 @@ from mqtt import MQTTClient
 import ntptime
 
 KEEP_ALVIVE = 20 # ping every such seconds
+DOOR_TIMEOUT = 10
 
 topics = {'doorCmd':b'coop/door/switch/cmd',
           'doorSwitchState':b'coop/door/switch/state',
@@ -71,13 +72,17 @@ class Board:
         d0 - upper switch
         d1 - lower switch
 
+        closed: both 0
+        open: d1=1, d0=1
+
+
         """
         top = self.pins['d0'].value()
         bottom = self.pins['d5'].value()
 
-        if top==1 and bottom==0:
+        if top==1 and bottom==1:
             return 'open'
-        elif top==0 and bottom==1:
+        elif top==0 and bottom==0:
             return 'closed'
         else:
             return 'undefined'
@@ -86,7 +91,7 @@ class Board:
 
         if self.doorState == 'closed':
             print('Opening door')
-            tim = Timer(5)
+            tim = Timer(DOOR_TIMEOUT)
             self.motorUp()
             while (not tim.timeout) and (not self.doorState == "open"):
                 time.sleep(0.2)
@@ -97,7 +102,7 @@ class Board:
 
         if self.doorState == 'open':
             print('Closing door')
-            tim = Timer(5)
+            tim = Timer(DOOR_TIMEOUT)
             self.motorDown()
             while (not tim.timeout) and (not self.doorState == "closed"):
                 time.sleep(0.2)
