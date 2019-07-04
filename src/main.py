@@ -137,10 +137,10 @@ def mainLoop(client,board):
 
     counter = 0
     oldState = board.doorState
+    board.on('led')
 
     while True:
-        board.toggle('led')
-
+        #board.toggle('led')
 
         try:
             client.check_msg()
@@ -163,12 +163,8 @@ def mainLoop(client,board):
             oldState = newState
         #printInfo()
 
-
-
-
 if __name__ == '__main__':
     print('Running main.py')
-
 
     # set board time
     ntptime.settime()
@@ -176,6 +172,7 @@ if __name__ == '__main__':
     global client, board
     board = Board()
 
+    board.off('led') # low = led on
     client = MQTTClient('chickenMaster', config.broker,keepalive=KEEP_ALVIVE+5)
     client.DEBUG = True
     client.set_callback(mqttCallback)
@@ -195,3 +192,4 @@ if __name__ == '__main__':
         mainLoop(client,board)
     finally:
         client.disconnect()
+# check string
