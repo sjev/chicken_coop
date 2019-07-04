@@ -150,8 +150,9 @@ def mainLoop(client,board):
         time.sleep(1)
 
         if counter % KEEP_ALVIVE == 0:
-            client.ping()
-
+            #client.ping()
+            client.publish(topics['tele'], 'Online',retain=False)
+        
         counter += 1
         print(counter,' s0:',board.pins['d0'].value(), ' s1:',board.pins['d5'].value())
         print(board.doorState)
@@ -185,11 +186,12 @@ if __name__ == '__main__':
         time.sleep(5)
         machine.reset()
 
-    client.publish(topics['tele'], 'Online',retain=True)
+    #client.publish(topics['tele'], 'Online',retain=True)
     client.subscribe(topics['doorCmd'])
 
     try:
         mainLoop(client,board)
-    finally:
-        client.disconnect()
-# check string
+    except KeyboardInterrupt:
+        print('Keyboard interrupt')
+    except:
+        machine.reset()
