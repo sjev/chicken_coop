@@ -1,7 +1,7 @@
 from machine import Pin
 import time
 import config
-from mqtt import MQTTClient
+from umqtt.simple import MQTTClient
 import ntptime
 import machine
 
