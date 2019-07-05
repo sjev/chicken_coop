@@ -142,11 +142,7 @@ def mainLoop(client,board):
     while True:
         #board.toggle('led')
 
-        try:
-            client.check_msg()
-        except Exception as e:
-            print('chck_msg error: %r' % e)
-
+        client.check_msg()
         time.sleep(1)
 
         if counter % KEEP_ALVIVE == 0:
@@ -193,5 +189,7 @@ if __name__ == '__main__':
         mainLoop(client,board)
     except KeyboardInterrupt:
         print('Keyboard interrupt')
-    except:
+    except Exception as e:
+        print('Main loop stopped. Error: %r' % e)
+        time.sleep(5)
         machine.reset()
