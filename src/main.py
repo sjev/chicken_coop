@@ -1,3 +1,6 @@
+print('Starting main v1.0')
+
+
 from machine import Pin
 import time
 import config
