@@ -1,4 +1,4 @@
-print('Starting main v1.0')
+print('Starting main v1.1')
 
 
 from machine import Pin
@@ -167,7 +167,7 @@ if __name__ == '__main__':
     print('Running main.py')
 
     # set board time
-    ntptime.settime()
+    #ntptime.settime()
 
     global client, board
     board = Board()
