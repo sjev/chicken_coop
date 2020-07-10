@@ -9,7 +9,7 @@ import ntptime
 import machine
 
 KEEP_ALVIVE = 20 # ping every such seconds
-DOOR_TIMEOUT = 10
+DOOR_TIMEOUT = 5000
 
 topics = {'doorCmd':b'coop/door/switch/cmd',
           'doorSwitchState':b'coop/door/switch/state',
@@ -17,13 +17,13 @@ topics = {'doorCmd':b'coop/door/switch/cmd',
           'doorSensor':b'coop/door/sensor/state'}
 
 class Timer:
-    """ simple timekeeper class"""
+    """ simple timekeeper class, in ms"""
     def __init__(self,t=None):
-        self.start = time.time()
+        self.start = time.ticks_ms()
         self._timeout = t
 
     def elapsed(self):
-        return time.time()-self.start
+        return time.ticks_ms()-self.start
 
     @property
     def timeout(self):
@@ -33,7 +33,7 @@ class Timer:
             return self.elapsed() > self._timeout
 
     def reset(self):
-        self.start = time.time()
+        self.start = time.ticks_ms()
 
 class Board:
 
@@ -93,26 +93,27 @@ class Board:
 
     def openDoor(self):
 
-        if self.doorState == 'closed':
+        if self.doorState == 'closed' or (self.doorState == 'undefined'):
             print('Opening door')
             tim = Timer(DOOR_TIMEOUT)
             self.motorUp()
             while (not tim.timeout) and (not self.doorState == "open"):
-                time.sleep(0.2)
+                time.sleep_ms(200)
 
             self.motorOff()
+            print('Timer elapsed:' , tim.elapsed())
 
     def closeDoor(self):
 
-        if self.doorState == 'open':
+        if (self.doorState == 'open') or (self.doorState == 'undefined'):
             print('Closing door')
             tim = Timer(DOOR_TIMEOUT)
             self.motorDown()
             while (not tim.timeout) and (not self.doorState == "closed"):
-                time.sleep(0.2)
+                time.sleep_ms(200)
 
             self.motorOff()
-
+            print('Timer elapsed:' , tim.elapsed())
 
 
 def mqttCallback(topic,msg):
@@ -136,22 +137,21 @@ def printInfo():
     print('rssi: ',wifi.status('rssi'))
 
 def mainLoop(client,board):
-
-
     counter = 0
     oldState = board.doorState
     board.on('led')
 
     while True:
         #board.toggle('led')
-
+        print('checking msg')
         client.check_msg()
         time.sleep(1)
 
         if counter % KEEP_ALVIVE == 0:
-            #client.ping()
-            client.publish(topics['tele'], 'Online',retain=False)
-        
+            print('pinging')
+            client.ping()
+            #client.publish(topics['tele'], 'Online',retain=False)
+
         counter += 1
         print(counter,' s0:',board.pins['d0'].value(), ' s1:',board.pins['d5'].value())
         print(board.doorState)
@@ -166,14 +166,14 @@ def mainLoop(client,board):
 if __name__ == '__main__':
     print('Running main.py')
 
-    # set board time
-    #ntptime.settime()
+    #check config
+    print('Broker: ',config.broker)
 
     global client, board
     board = Board()
 
     board.off('led') # low = led on
-    client = MQTTClient('chickenMaster', config.broker,keepalive=KEEP_ALVIVE+5)
+    client = MQTTClient('chickenMaster', config.broker, user=config.mqtt_user, password=config.mqtt_pass, keepalive=KEEP_ALVIVE+5)
     client.DEBUG = True
     client.set_callback(mqttCallback)
     client.set_last_will(topics['tele'],'Offline',retain=True)
@@ -185,7 +185,8 @@ if __name__ == '__main__':
         time.sleep(5)
         machine.reset()
 
-    #client.publish(topics['tele'], 'Online',retain=True)
+    client.publish(topics['tele'], 'Online',retain=True)
+    client.publish(topics['doorSensor'],board.doorState)
     client.subscribe(topics['doorCmd'])
 
     try:
