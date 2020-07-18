@@ -5,16 +5,19 @@ from machine import Pin
 import time
 import config
 from umqtt.simple import MQTTClient
-import ntptime
 import machine
+import dht
+import ujson
 
 KEEP_ALVIVE = 20 # ping every such seconds
+MEASURE_DHT = 5
 DOOR_TIMEOUT = 5000
 
 topics = {'doorCmd':b'coop/door/switch/cmd',
           'doorSwitchState':b'coop/door/switch/state',
           'tele':b'coop/lwt',
-          'doorSensor':b'coop/door/sensor/state'}
+          'doorSensor':b'coop/door/sensor/state',
+          'dht':b'coop/dht'}
 
 class Timer:
     """ simple timekeeper class, in ms"""
@@ -40,6 +43,7 @@ class Board:
     # name - gpio pairs
     outputs = [('led',2),('d1',5),('d2',4)]
     inputs = [('d0',16),('d5',14)]
+    sensor =  dht.DHT22(machine.Pin(13)) # dht on D7
 
     def __init__(self):
 
@@ -48,6 +52,12 @@ class Board:
             self.pins[name] = Pin(gpio, Pin.OUT)
         for name,gpio in self.inputs:
             self.pins[name] = Pin(gpio, Pin.IN)
+
+    def measure_dht(self):
+        self.sensor.measure()
+        data = {"Temperature":self.sensor.temperature(),"Humidity":self.sensor.humidity()}
+        return ujson.dumps(data)
+
 
     def off(self,pinName):
         self.pins[pinName].value(0)
@@ -151,6 +161,10 @@ def mainLoop(client,board):
             print('pinging')
             client.ping()
             #client.publish(topics['tele'], 'Online',retain=False)
+        if counter % MEASURE_DHT == 0:
+            s = board.measure_dht()
+            print(s)
+            client.publish(topics['dht'],s)
 
         counter += 1
         print(counter,' s0:',board.pins['d0'].value(), ' s1:',board.pins['d5'].value())
