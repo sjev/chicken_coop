@@ -8,6 +8,13 @@ import time
 import gc
 
 
+from sys import modules
+def reload(mod):
+  mod_name = mod.__name__
+  del sys.modules[mod_name]
+  gc.collect()
+  return __import__(mod_name)
+
 def connectWifi():
     """ connect to a wifi network """
     ap_if = network.WLAN(network.AP_IF)
@@ -16,9 +23,9 @@ def connectWifi():
     wifi = network.WLAN(network.STA_IF)
 
     if not wifi.isconnected():
-        
+
         print('connecting to ',config.ssid)
-    
+
         #wifi.ifconfig(config.netconfig)
         wifi.active(True)
         wifi.connect(config.ssid, config.wifiPass)
@@ -35,7 +42,7 @@ def connectWifi():
 
     if wifi.isconnected(): # should be connected now
         print('network config:', wifi.ifconfig())
-        
+
     else: # warn with led and reboot
         print('Connection failed!')
         time.sleep(5)

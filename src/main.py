@@ -9,15 +9,23 @@ import machine
 import dht
 import ujson
 
-KEEP_ALVIVE = 20 # ping every such seconds
-MEASURE_DHT = 5
+KEEP_ALVIVE = 30 # ping every such seconds
+MEASURE_DHT = 20
 DOOR_TIMEOUT = 5000
+
+t_start = time.time()
+
+from network import WLAN
+wifi = WLAN()
 
 topics = {'doorCmd':b'coop/door/switch/cmd',
           'doorSwitchState':b'coop/door/switch/state',
           'tele':b'coop/lwt',
           'doorSensor':b'coop/door/sensor/state',
-          'dht':b'coop/dht'}
+          'dht':b'coop/dht',
+          'status':b'coop/status'}
+
+
 
 class Timer:
     """ simple timekeeper class, in ms"""
@@ -54,8 +62,13 @@ class Board:
             self.pins[name] = Pin(gpio, Pin.IN)
 
     def measure_dht(self):
-        self.sensor.measure()
-        data = {"Temperature":self.sensor.temperature(),"Humidity":self.sensor.humidity()}
+        try:
+            self.sensor.measure()
+            data = {"Temperature":self.sensor.temperature(),"Humidity":self.sensor.humidity()}
+        except Exception as e:
+            data = {"Temperature":0,"Humidity":0}
+            print('Could not read DHT sensor: %r' % e)
+
         return ujson.dumps(data)
 
 
@@ -140,8 +153,7 @@ def mqttCallback(topic,msg):
 
 def printInfo():
     """ print diagnostic info to serial """
-    from network import WLAN
-    wifi = WLAN()
+
 
     print('ifconfig :', wifi.ifconfig())
     print('rssi: ',wifi.status('rssi'))
@@ -158,9 +170,12 @@ def mainLoop(client,board):
         time.sleep(1)
 
         if counter % KEEP_ALVIVE == 0:
-            print('pinging')
-            client.ping()
-            #client.publish(topics['tele'], 'Online',retain=False)
+            #client.ping()
+            data = {'uptime':time.time()-t_start,'rssi':wifi.status('rssi')}
+            print(data)
+            client.publish(topics['status'], ujson.dumps(data) )
+
+
         if counter % MEASURE_DHT == 0:
             s = board.measure_dht()
             print(s)
@@ -207,7 +222,12 @@ if __name__ == '__main__':
         mainLoop(client,board)
     except KeyboardInterrupt:
         print('Keyboard interrupt')
+
     except Exception as e:
-        print('Main loop stopped. Error: %r' % e)
-        time.sleep(5)
+        print('Main loop stopped. reset in 10 seconds' )
+        import sys
+        sys.print_exception(e)
+        board.off('led')
+        time.sleep(10)
+        print('resetting machine')
         machine.reset()
