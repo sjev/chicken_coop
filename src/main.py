@@ -9,9 +9,11 @@ import machine
 import dht
 import ujson
 
-KEEP_ALVIVE = 30 # ping every such seconds
+KEEP_ALVIVE = 60 # ping every such seconds
 MEASURE_DHT = 20
+SEND_STATUS = 10
 DOOR_TIMEOUT = 5000
+QOS = 1
 
 t_start = time.time()
 
@@ -143,7 +145,7 @@ def mqttCallback(topic,msg):
     print('Topic: %s Message:%s' % (topic,msg))
 
     if topic == topics['doorCmd']: # received command
-        client.publish(topics['doorSwitchState'],msg) # echo command
+        client.publish(topics['doorSwitchState'],msg,qos = QOS) # echo command
         if msg == b'ON':
             board.openDoor()
         elif msg == b'OFF':
@@ -165,21 +167,28 @@ def mainLoop(client,board):
 
     while True:
         #board.toggle('led')
-        print('checking msg')
-        client.check_msg()
         time.sleep(1)
+        uptime = time.time()-t_start
+        print('[%i] checking msg' % uptime)
+        try:
+            #print('skipping.')
+            client.check_msg()
+        except OSError as e:
+            print("Error: ", e)
 
         if counter % KEEP_ALVIVE == 0:
-            #client.ping()
+            client.ping()
+
+        if counter % SEND_STATUS == 0:
             data = {'uptime':time.time()-t_start,'rssi':wifi.status('rssi')}
             print(data)
-            client.publish(topics['status'], ujson.dumps(data) )
+            client.publish(topics['status'], ujson.dumps(data) , qos=QOS)
 
 
         if counter % MEASURE_DHT == 0:
             s = board.measure_dht()
             print(s)
-            client.publish(topics['dht'],s)
+            client.publish(topics['dht'],s, qos=QOS)
 
         counter += 1
         print(counter,' s0:',board.pins['d0'].value(), ' s1:',board.pins['d5'].value())
@@ -188,7 +197,7 @@ def mainLoop(client,board):
         newState = board.doorState
         if oldState != newState:
             print('publishing state')
-            client.publish(topics['doorSensor'],newState)
+            client.publish(topics['doorSensor'],newState, qos=QOS)
             oldState = newState
         #printInfo()
 
@@ -202,7 +211,9 @@ if __name__ == '__main__':
     board = Board()
 
     board.off('led') # low = led on
-    client = MQTTClient('chickenMaster', config.broker, user=config.mqtt_user, password=config.mqtt_pass, keepalive=KEEP_ALVIVE+5)
+    #client = MQTTClient('chickenMaster', config.broker, user=config.mqtt_user, password=config.mqtt_pass, keepalive=KEEP_ALVIVE+5)
+    client = MQTTClient('chickenMaster', config.broker, user=config.mqtt_user, password=config.mqtt_pass)
+
     client.DEBUG = True
     client.set_callback(mqttCallback)
     client.set_last_will(topics['tele'],'Offline',retain=True)
@@ -216,7 +227,7 @@ if __name__ == '__main__':
 
     client.publish(topics['tele'], 'Online',retain=True)
     client.publish(topics['doorSensor'],board.doorState)
-    client.subscribe(topics['doorCmd'])
+    client.subscribe(topics['doorCmd'], qos=QOS)
 
     try:
         mainLoop(client,board)

@@ -52,6 +52,8 @@ def connectWifi():
 
 connectWifi()
 gc.collect()
+
+
 # start webrepl
-import webrepl
-webrepl.start()
+#import webrepl
+#webrepl.start()
