@@ -53,7 +53,13 @@ def connectWifi():
 connectWifi()
 gc.collect()
 
+# init webrepl
+import os
+files = os.listdir()
+if 'webrepl_cfg.py' not in files:
+    with open('webrepl_cfg.py','w') as f:
+        f.write("PASS = '%s'" % config.webreplPass)
 
 # start webrepl
-#import webrepl
-#webrepl.start()
+import webrepl
+webrepl.start()
