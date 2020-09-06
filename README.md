@@ -17,4 +17,4 @@ This repository documents a project for building an automatic system for a chick
 
 ## Notes
 
-* `config.py` contains passwords and other sensitive data. It is encrypted with [git-secret](https://gist.github.com/GeorgiosGoniotakis/26198c79137667b50a6f3a4ed614d448#file-how-to-git-secret-sh)
+* `config.py` contains passwords and other sensitive data. It is encrypted with [git-secret](https://git-secret.io/)
