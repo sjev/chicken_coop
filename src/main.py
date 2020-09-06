@@ -97,8 +97,10 @@ def cmd(request,response):
 
 @webapp.route('/status',method='GET')
 def status(request,response):
+
+    state_to_sensor = {'open':'open','closed':'closed','undefined':'open'}
     try:
-        data = {'uptime':time.time()-t_start, 'door_state': door.state,'rssi':wifi.status('rssi')}
+        data = {'uptime':time.time()-t_start, 'door_state': state_to_sensor[door.state],'rssi':wifi.status('rssi')}
         data['switches'] = door.switch_states()
         data['sensor'] = sensor.data
         data['time'] = time.mktime(time.localtime())
