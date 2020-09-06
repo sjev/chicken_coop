@@ -9,7 +9,7 @@ from dht_sensor import Sensor
 
 wifi = WLAN()
 
-ENABLE_WDT = False
+ENABLE_WDT = True
 
 #watchdog
 if ENABLE_WDT:

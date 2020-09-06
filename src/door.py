@@ -31,6 +31,8 @@ class Door:
     def __init__(self):
         self.pins = {}
         self.target_state = None
+        self.busy = False
+
         for name,gpio in self.outputs:
             self.pins[name] = Pin(gpio, Pin.OUT)
         for name,gpio in self.inputs:
@@ -62,6 +64,11 @@ class Door:
 
     async def open(self):
 
+        if self.busy:
+            print('door is busy')
+            return
+
+        self.busy = True
         self.target_state = 1
         if self.state == 'closed' or (self.state == 'undefined'):
             print('Opening door')
@@ -72,8 +79,15 @@ class Door:
 
             self.motorOff()
             print('Timer elapsed:' , tim.elapsed())
+        self.busy = False
 
     async def close(self):
+
+        if self.busy:
+            print('door is busy')
+            return
+
+        self.busy = True
         self.target_state = 0
         if (self.state == 'open') or (self.state == 'undefined'):
             print('Closing door')
@@ -84,6 +98,7 @@ class Door:
 
             self.motorOff()
             print('Timer elapsed:' , tim.elapsed())
+        self.busy = False
 
     @property
     def state(self):
