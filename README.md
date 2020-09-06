@@ -13,3 +13,8 @@ This repository documents a project for building an automatic system for a chick
 * [L298N motor driver](https://opencircuit.nl/Product/10116/L298N-motor-driver-module-H-Bridge)
 * [12 V power supply](https://opencircuit.nl/Product/11875/12V-Power-supply-5A-60W)
 * [12V 100:1 DC motor](https://opencircuit.nl/Product/12967/1001-Metalen-Gearmotor-37Dx57L-mm)
+
+
+## Notes
+
+* `config.py` contains passwords and other sensitive data. It is encrypted with [git-secret](https://gist.github.com/GeorgiosGoniotakis/26198c79137667b50a6f3a4ed614d448#file-how-to-git-secret-sh)
