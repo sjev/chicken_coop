@@ -62,6 +62,7 @@ async def measure_dht():
     while True:
         sensor.measure()
         await asyncio.sleep(10)
+        gc.collect()
 
 #----------------------------------------------------
 @webapp.route('/target_state', method='GET')
@@ -103,7 +104,8 @@ def status(request,response):
         data = {'uptime':time.time()-t_start, 'door_state': state_to_sensor[door.state],'rssi':wifi.status('rssi')}
         data['switches'] = door.switch_states()
         data['sensor'] = sensor.data
-        data['time'] = time.mktime(time.localtime())
+        #data['time'] = time.mktime(time.localtime())
+        gc.collect()
         yield from jsonify(response, data)
     except Exception as e:
         print('error: %r' % e)
